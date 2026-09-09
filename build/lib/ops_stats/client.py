@@ -221,3 +221,63 @@ class OpsClient:
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.close()
+
+
+def update_stats(
+    customer_name: str,
+    component_type: str,
+    component_name: str,
+    total_events: int,
+    total_errors: int,
+    average_response_time_ms: float,
+    *,
+    conninfo: Optional[str] = None,
+    dotenv_path: Optional[Union[str, Path]] = None,
+    **conn_kwargs,
+) -> None:
+    """
+    One-shot convenience function: opens a connection, calls
+    ops.update_stats(...), commits, and closes.
+
+    This is the "just call it" entry point for scripts and simple
+    reporting sites. If you're calling it repeatedly in a loop or a
+    long-running service, prefer OpsClient so you reuse one
+    connection instead of opening/closing one every time.
+    """
+    with OpsClient(conninfo=conninfo, dotenv_path=dotenv_path, **conn_kwargs) as client:
+        client.update_stats(
+            customer_name,
+            component_type,
+            component_name,
+            total_events,
+            total_errors,
+            average_response_time_ms,
+        )
+
+
+def update_state(
+    customer_name: str,
+    component_type: str,
+    component_name: str,
+    available: bool,
+    *,
+    conninfo: Optional[str] = None,
+    dotenv_path: Optional[Union[str, Path]] = None,
+    **conn_kwargs,
+) -> None:
+    """
+    One-shot convenience function: opens a connection, calls
+    ops.update_state(...), commits, and closes.
+
+    This is the "just call it" entry point for scripts and simple
+    reporting sites. If you're calling it repeatedly in a loop or a
+    long-running service, prefer OpsClient so you reuse one
+    connection instead of opening/closing one every time.
+    """
+    with OpsClient(conninfo=conninfo, dotenv_path=dotenv_path, **conn_kwargs) as client:
+        client.update_state(
+            customer_name,
+            component_type,
+            component_name,
+            available,
+        )
