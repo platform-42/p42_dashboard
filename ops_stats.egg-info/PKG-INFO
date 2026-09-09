@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ops-stats
-Version: 0.1.0
+Version: 1.2.0
 Summary: Thin client wrapper for the ops.update_stats PostgreSQL stored function
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
