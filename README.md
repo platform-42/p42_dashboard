@@ -1,0 +1,85 @@
+# ops-stats
+
+Thin client wrapper for the `ops.update_stats` PostgreSQL stored function.
+Hides connection handling, cursor management, and type-casting behind a
+single function call.
+
+## Install
+
+```bash
+pip install ops_stats-0.1.0-py3-none-any.whl
+```
+
+## Configure the connection
+
+`ops_stats` uses `psycopg`, which — same as `psql` — reads the standard
+libpq environment variables if you don't pass connection details
+explicitly:
+
+```bash
+export PGHOST=localhost
+export PGPORT=5432
+export PGDATABASE=dashboard
+export PGUSER=postgres
+export PGPASSWORD='Albert0Ascari!'
+```
+
+(A `~/.pgpass` file works too, and is a better fit than an env var for
+storing the password outside your shell history / process environment.)
+
+## Usage
+
+### One-shot call (simplest case)
+
+```python
+from ops_stats import update_stats
+
+update_stats(
+    customer_name="Platform42",
+    component_type="CHANNEL",
+    component_name="WhatsApp",
+    total_events=1000,
+    total_errors=25,
+    average_response_time_ms=312.450,
+)
+```
+
+That's it — no connection object, no cursor, no casts, no commit/rollback
+to remember. It connects, calls the function, commits, and closes.
+
+### Repeated calls (reuse one connection)
+
+If you're reporting stats many times in a loop or a long-running service,
+open the client once and reuse it:
+
+```python
+from ops_stats import OpsStatsClient
+
+with OpsStatsClient() as client:
+    client.update_stats("Platform42", "CHANNEL", "WhatsApp", 1000, 25, 312.450)
+    client.update_stats("Platform42", "CHANNEL", "SMS", 500, 2, 88.1)
+```
+
+### Overriding connection details explicitly
+
+Both entry points accept the same connection overrides, if you don't want
+to rely on environment variables:
+
+```python
+from ops_stats import update_stats
+
+update_stats(
+    "Platform42", "CHANNEL", "WhatsApp", 1000, 25, 312.450,
+    host="localhost", port=5432, dbname="dashboard",
+    user="postgres", password="Albert0Ascari!",
+)
+```
+
+or with a conninfo string:
+
+```python
+update_stats(
+    "Platform42", "CHANNEL", "WhatsApp", 1000, 25, 312.450,
+    conninfo="host=localhost dbname=dashboard user=postgres password=...",
+)
+```

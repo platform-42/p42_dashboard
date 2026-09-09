@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ops-stats"
+version = "0.1.0"
+description = "Thin client wrapper for the ops.update_stats PostgreSQL stored function"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "psycopg[binary]>=3.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["ops_stats*"]
