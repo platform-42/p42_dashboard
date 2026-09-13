@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ops-stats
-Version: 5.0.0
+Version: 5.2.0
 Summary: Thin client wrapper for the ops.update_stats PostgreSQL stored function
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
@@ -12,6 +12,11 @@ Requires-Dist: python-dotenv>=1.0
 Thin client wrapper for the `ops.update_stats` PostgreSQL stored function.
 Hides connection handling, cursor management, and type-casting behind a
 single function call.
+
+## Build
+```bash
+python -m build --wheel
+```
 
 ## Install
 
