@@ -15,7 +15,7 @@ Typical usage
         component_name="WhatsApp",
         total_events=1000,
         total_errors=25,
-        average_response_time_ms=312.450,
+        total_response_time_ms=312450.0,
     )
 
     update_state(
@@ -75,7 +75,7 @@ _UPDATE_STATS_SQL = """
         %s::text,     -- component_name
         %s::integer,  -- total_events
         %s::integer,  -- total_errors
-        %s::numeric   -- average_response_time_ms
+        %s::numeric   -- total_response_time_ms (SUM over the reported batch, not an average)
     )
 """
 
@@ -99,7 +99,7 @@ class OpsClient:
     Can be used as a context manager:
 
         with OpsClient() as client:
-            client.update_stats("Platform42", "CHANNEL", "WhatsApp", 1000, 25, 312.450)
+            client.update_stats("Platform42", "CHANNEL", "WhatsApp", 1000, 25, 312450.0)
             client.update_state("Platform42", "CHANNEL", "WhatsApp", True)
     """
 
@@ -152,9 +152,24 @@ class OpsClient:
         component_name: str,
         total_events: int,
         total_errors: int,
-        average_response_time_ms: float,
+        total_response_time_ms: float,
     ) -> None:
-        """Call ops.update_stats(...) with the given values and commit."""
+        """
+        Call ops.update_stats(...) with the given values and commit.
+
+        Parameters report totals for a batch of N events (the app-side
+        "event hysteresis" window, e.g. 100-1000 events) - NOT a
+        per-event average. total_response_time_ms is the SUM of response
+        times across that batch.
+
+        Server-side, ops.update_stats() aggregates these batch totals
+        into fixed time windows (see ops.stats.window_start, typically
+        5 minutes) and handles the reset-vs-accumulate decision itself -
+        callers just report "here's what happened since I last reported"
+        and don't need to think about resets. The true average response
+        time per event is computed by the dashboard as
+        total_response_time_ms / total_events, not here.
+        """
         conn = self.connection
         try:
             with conn.cursor() as cur:
@@ -166,7 +181,7 @@ class OpsClient:
                         component_name,
                         total_events,
                         total_errors,
-                        average_response_time_ms,
+                        total_response_time_ms,
                     ),
                 )
             conn.commit()
@@ -229,7 +244,7 @@ def update_stats(
     component_name: str,
     total_events: int,
     total_errors: int,
-    average_response_time_ms: float,
+    total_response_time_ms: float,
     *,
     conninfo: Optional[str] = None,
     dotenv_path: Optional[Union[str, Path]] = None,
@@ -238,6 +253,19 @@ def update_stats(
     """
     One-shot convenience function: opens a connection, calls
     ops.update_stats(...), commits, and closes.
+
+    Parameters report totals for a batch of N events (the app-side
+    "event hysteresis" window, e.g. 100-1000 events) - NOT a per-event
+    average. total_response_time_ms is the SUM of response times across
+    that batch.
+
+    Server-side, ops.update_stats() aggregates these batch totals into
+    fixed time windows (see ops.stats.window_start, typically 5 minutes)
+    and handles the reset-vs-accumulate decision itself - callers just
+    report "here's what happened since I last reported" and don't need
+    to think about resets. The true average response time per event is
+    computed by the dashboard as total_response_time_ms / total_events,
+    not here.
 
     This is the "just call it" entry point for scripts and simple
     reporting sites. If you're calling it repeatedly in a loop or a
@@ -251,7 +279,7 @@ def update_stats(
             component_name,
             total_events,
             total_errors,
-            average_response_time_ms,
+            total_response_time_ms,
         )
 
 
