@@ -4,6 +4,11 @@ Thin client wrapper for the `ops.update_stats` PostgreSQL stored function.
 Hides connection handling, cursor management, and type-casting behind a
 single function call.
 
+## Build
+```bash
+python -m build --wheel
+```
+
 ## Install
 
 ```bash
