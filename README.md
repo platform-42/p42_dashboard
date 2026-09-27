@@ -26,7 +26,7 @@ export PGHOST=localhost
 export PGPORT=5432
 export PGDATABASE=dashboard
 export PGUSER=postgres
-export PGPASSWORD='Albert0Ascari!'
+export PGPASSWORD='<password>'
 ```
 
 (A `~/.pgpass` file works too, and is a better fit than an env var for
