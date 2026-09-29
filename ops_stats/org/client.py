@@ -25,17 +25,6 @@ Typical usage
         available=True,
     )
 
-    # Planned maintenance: component is down on purpose. The dashboard
-    # shows it gray instead of red. Omitting planned_shutdown (the
-    # default) means an abnormal end (ABEND) and shows red.
-    update_state(
-        customer_name="Platform42",
-        component_type="CHANNEL",
-        component_name="WhatsApp",
-        available=False,
-        planned_shutdown=True,
-    )
-
 Connection parameters are picked up from a `.env` file (or the process
 environment directly) using the standard libpq environment variable
 names: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD. You can also pass
@@ -95,19 +84,9 @@ _UPDATE_STATE_SQL = """
         %s::text,     -- customer_name
         %s::text,     -- component_type
         %s::text,     -- component_name
-        %s::boolean,  -- available
-        %s::boolean   -- planned_shutdown (only meaningful when available = false)
+        %s::boolean   -- available
     )
 """
-
-
-def _validate_state_args(available: bool, planned_shutdown: bool) -> None:
-    """A planned shutdown only makes sense for a component that is down."""
-    if available and planned_shutdown:
-        raise ValueError(
-            "planned_shutdown=True requires available=False "
-            "(a running component cannot be in planned maintenance)"
-        )
 
 
 class OpsClient:
@@ -222,26 +201,8 @@ class OpsClient:
         component_type: str,
         component_name: str,
         available: bool,
-        *,
-        planned_shutdown: bool = False,
     ) -> None:
-        """
-        Call ops.update_state(...) with the given values and commit.
-
-        Resulting state stored server-side:
-
-            available=True                          -> 'UP'           (green)
-            available=False                         -> 'DOWN'         (red, ABEND)
-            available=False, planned_shutdown=True  -> 'MAINTENANCE'  (gray)
-
-        planned_shutdown defaults to False, so a component that goes down
-        is treated as an abnormal end unless the caller explicitly says
-        the shutdown was planned. It is keyword-only to keep call sites
-        readable (no bare True/False pairs).
-
-        Raises ValueError for available=True with planned_shutdown=True.
-        """
-        _validate_state_args(available, planned_shutdown)
+        """Call ops.update_state(...) with the given values and commit."""
         conn = self.connection
         try:
             with conn.cursor() as cur:
@@ -252,7 +213,6 @@ class OpsClient:
                         component_type,
                         component_name,
                         available,
-                        planned_shutdown,
                     ),
                 )
             conn.commit()
@@ -329,7 +289,6 @@ def update_state(
     component_name: str,
     available: bool,
     *,
-    planned_shutdown: bool = False,
     conninfo: Optional[str] = None,
     dotenv_path: Optional[Union[str, Path]] = None,
     **conn_kwargs,
@@ -337,11 +296,6 @@ def update_state(
     """
     One-shot convenience function: opens a connection, calls
     ops.update_state(...), commits, and closes.
-
-    planned_shutdown=True marks a deliberate stop (planned maintenance),
-    shown gray on the dashboard. The default (False) treats any
-    available=False report as an abnormal end, shown red. See
-    OpsClient.update_state for the full state mapping.
 
     This is the "just call it" entry point for scripts and simple
     reporting sites. If you're calling it repeatedly in a loop or a
@@ -354,5 +308,4 @@ def update_state(
             component_type,
             component_name,
             available,
-            planned_shutdown=planned_shutdown,
         )
