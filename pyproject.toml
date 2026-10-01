@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ops-stats"
-version = "5.4.0"
-description = "Thin client wrapper for the ops.update_stats PostgreSQL stored function"
+version = "5.5.0"
+description = "Thin client for the ops.update_stats and ops.update_state PostgreSQL stored functions"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
