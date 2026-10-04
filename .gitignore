@@ -1,4 +1,16 @@
+#
+# Python
+#
+**/__pycache__/
+**/.mypy_cache/
 .venv/
-.mypy_cache/
+
+#
+# Security
+#
+
+#
+# Project (build) artifacts 
+#
 build/
 *.egg-info/
